@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="text-center mb-0">Servicio de Autenticación con Registro de IP</h2>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <p class="lead">
+                        Sistema seguro de autenticación que registra las direcciones IP para mayor seguridad.
+                    </p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h3 class="mb-3">¿Nuevo usuario?</h3>
+                                <p>Regístrate para comenzar a utilizar nuestro servicio.</p>
+                                <a href="{{ url_for('register') }}" class="btn btn-outline-primary">Registrarse</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h3 class="mb-3">¿Ya tienes cuenta?</h3>
+                                <p>Inicia sesión para acceder a tu dashboard.</p>
+                                <a href="{{ url_for('login') }}" class="btn btn-primary">Iniciar Sesión</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h4>Características:</h4>
+                    <ul>
+                        <li>Registro seguro de usuarios</li>
+                        <li>Almacenamiento de contraseñas con hash</li>
+                        <li>Registro de dirección IP en cada inicio de sesión</li>
+                        <li>Historial de inicios de sesión con fecha, hora e IP</li>
+                        <li>Seguimiento de intentos fallidos de inicio de sesión</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h2 class="text-center mb-0">Añadir IP Segura</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('add_safe_ip') }}">
+                    <div class="mb-3">
+                        <label for="ip_address" class="form-label">Dirección IP</label>
+                        <input type="text" class="form-control" id="ip_address" name="ip_address" value="{{ request.remote_addr }}" required>
+                        <div class="form-text">Introduce una dirección IPv4 o IPv6 válida.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="¿Dónde se usa esta IP? ¿Por qué es segura?"></textarea>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Guardar IP Segura</button>
+                        <a href="{{ url_for('safe_ips') }}" class="btn btn-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h3 class="mb-0">Información Útil</h3>
+            </div>
+            <div class="card-body">
+                <p><strong>Tu dirección IP actual es:</strong> <span class="badge bg-secondary">{{ request.remote_addr }}</span></p>
+                <p>Añadir una IP a la lista de seguras significa que:</p>
+                <ul>
+                    <li>Los inicios de sesión desde esta IP no se marcarán como sospechosos</li>
+                    <li>No se mostrarán alertas cuando se inicie sesión desde esta dirección</li>
+                    <li>Las IPs son normalmente direcciones específicas de redes confiables</li>
+                </ul>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> Asegúrate de añadir solo IPs que sean realmente confiables.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

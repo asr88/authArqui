@@ -10,6 +10,13 @@
             <div class="card-body">
                 <h3>Bienvenido, {{ user.username }}!</h3>
                 <p>Esta es tu área personal donde puedes ver la actividad de tu cuenta.</p>
+                
+                {% if not is_ip_safe(request.remote_addr) %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> <strong>Aviso:</strong> Tu dirección IP actual ({{ request.remote_addr }}) no está en la lista de IPs seguras. 
+                    <a href="{{ url_for('safe_ips') }}" class="alert-link">Gestionar IPs seguras</a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -30,18 +37,32 @@
                                 <th>Fecha y Hora</th>
                                 <th>Dirección IP</th>
                                 <th>Estado</th>
+                                <th>Seguridad</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for login in login_history %}
                             <tr>
                                 <td>{{ login.timestamp.strftime('%d-%m-%Y %H:%M:%S') }}</td>
-                                <td><span class="badge bg-secondary">{{ login.ip_address }}</span></td>
+                                <td>
+                                    {% if login.is_suspicious %}
+                                    <span class="badge bg-warning text-dark">{{ login.ip_address }}</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ login.ip_address }}</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if login.success %}
                                     <span class="badge bg-success">Exitoso</span>
                                     {% else %}
                                     <span class="badge bg-danger">Fallido</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if login.is_suspicious %}
+                                    <span class="badge bg-warning text-dark">IP No Verificada</span>
+                                    {% else %}
+                                    <span class="badge bg-success">IP Segura</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -63,16 +84,40 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-warning text-dark">
-                <h3 class="mb-0">Información de Seguridad</h3>
+                <h3 class="mb-0">Opciones de Seguridad</h3>
             </div>
             <div class="card-body">
-                <p>Tu dirección IP actual es: <span class="badge bg-secondary">{{ request.remote_addr }}</span></p>
-                <p>Consejos de seguridad:</p>
-                <ul>
-                    <li>Nunca compartas tu contraseña con nadie.</li>
-                    <li>Verifica regularmente tu historial de inicios de sesión para detectar actividad sospechosa.</li>
-                    <li>Si detectas algún inicio de sesión no reconocido, cambia tu contraseña inmediatamente.</li>
-                </ul>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Gestión de IPs Seguras</h5>
+                                <p class="card-text">Administra las direcciones IP que consideras seguras para iniciar sesión.</p>
+                                <a href="{{ url_for('safe_ips') }}" class="btn btn-primary">Gestionar IPs</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">Inicios de Sesión Sospechosos</h5>
+                                <p class="card-text">Revisa los intentos de inicio de sesión desde IPs no verificadas.</p>
+                                <a href="{{ url_for('suspicious_logins') }}" class="btn btn-warning">Ver Sospechosos</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <p>Tu dirección IP actual es: <span class="badge bg-secondary">{{ request.remote_addr }}</span></p>
+                    <p>Consejos de seguridad:</p>
+                    <ul>
+                        <li>Nunca compartas tu contraseña con nadie</li>
+                        <li>Verifica regularmente tu historial de inicios de sesión</li>
+                        <li>Marca como seguras solo las IPs que uses regularmente</li>
+                        <li>Si detectas actividad sospechosa, cambia tu contraseña de inmediato</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

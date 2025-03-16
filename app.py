@@ -271,11 +271,49 @@ def suspicious_logins():
     suspicious_logins = LoginHistory.query.filter_by(is_suspicious=True).order_by(LoginHistory.timestamp.desc()).all()
     return render_template('suspicious_logins.html', suspicious_logins=suspicious_logins)
 
+# Modifica la obtención de IP para considerar un encabezado personalizado
+def get_client_ip():
+    """
+    Obtiene la IP del cliente considerando encabezados de proxies comunes
+    
+    Orden de prioridad:
+    1. X-Simulated-IP (para pruebas)
+    2. X-Forwarded-For
+    3. X-Real-IP
+    4. CF-Connecting-IP (Cloudflare)
+    5. request.remote_addr (IP de conexión directa)
+    """
+    # Para pruebas, primero considera el encabezado X-Simulated-IP
+    simulated_ip = request.headers.get('X-Simulated-IP')
+    if simulated_ip and is_valid_ip(simulated_ip):
+        return simulated_ip
+    
+    # Encabezado X-Forwarded-For (estándar para muchos proxies/balanceadores)
+    forwarded_for = request.headers.get('X-Forwarded-For')
+    if forwarded_for:
+        # X-Forwarded-For puede contener múltiples IPs separadas por comas
+        # La primera IP en la lista es generalmente la IP original del cliente
+        ips = forwarded_for.split(',')
+        client_ip = ips[0].strip()
+        if is_valid_ip(client_ip):
+            return client_ip
+    
+    # Encabezado X-Real-IP (usado por nginx y otros proxies)
+    real_ip = request.headers.get('X-Real-IP')
+    if real_ip and is_valid_ip(real_ip):
+        return real_ip
+    
+    # Encabezado de Cloudflare
+    cf_ip = request.headers.get('CF-Connecting-IP')
+    if cf_ip and is_valid_ip(cf_ip):
+        return cf_ip
+    
+    # Si no hay encabezados de proxy válidos, usa la IP de conexión directa
+    return request.remote_addr
+
 @app.route('/api/login', methods=['POST'])
 def api_login():
-    """
-    Endpoint exclusivo para APIs que siempre devuelve JSON
-    """
+    """Endpoint API para login que permite simular IPs"""
     # Obtener datos de la solicitud (acepta tanto JSON como form-data)
     if request.is_json:
         data = request.json
@@ -289,12 +327,14 @@ def api_login():
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
     
+    # Obtener IP (permitiendo simulación para pruebas)
+    ip_address = get_client_ip()
+    
+    # Verificar si es una IP segura
+    ip_suspicious = not is_ip_safe(ip_address)
+    
     # Buscar usuario
     user = User.query.filter_by(username=username).first()
-    
-    # Verificar IP
-    ip_address = request.remote_addr
-    ip_suspicious = not is_ip_safe(ip_address)
     
     # Verificar autenticación
     if not user or not user.check_password(password):
@@ -309,7 +349,11 @@ def api_login():
             db.session.add(login_record)
             db.session.commit()
         
-        return jsonify({"error": "Invalid username or password"}), 401
+        return jsonify({
+            "error": "Invalid username or password",
+            "ip_used": ip_address,
+            "ip_status": "suspicious" if ip_suspicious else "safe"
+        }), 401
     
     # Si llegamos aquí, la autenticación fue exitosa
     # Guardar historial de inicio de sesión
@@ -328,7 +372,32 @@ def api_login():
         "message": "Login successful",
         "user_id": user.id,
         "username": user.username,
+        "ip_used": ip_address,
         "ip_status": "suspicious" if ip_suspicious else "safe"
+    })
+
+# Endpoint adicional para verificar si una IP está en la lista segura
+@app.route('/api/check_ip', methods=['POST'])
+def api_check_ip():
+    """Endpoint para verificar el estado de una IP"""
+    if request.is_json:
+        data = request.json
+        ip_to_check = data.get('ip')
+    else:
+        ip_to_check = request.form.get('ip')
+    
+    if not ip_to_check:
+        return jsonify({"error": "IP address is required"}), 400
+        
+    if not is_valid_ip(ip_to_check):
+        return jsonify({"error": "Invalid IP address format"}), 400
+    
+    is_safe = is_ip_safe(ip_to_check)
+    
+    return jsonify({
+        "ip": ip_to_check,
+        "is_safe": is_safe,
+        "status": "safe" if is_safe else "suspicious"
     })
 
 if __name__ == '__main__':
